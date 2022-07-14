@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
@@ -7,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace SteamAuth
 {
@@ -50,6 +50,7 @@ namespace SteamAuth
         /// </summary>
         [JsonProperty("fully_enrolled")]
         public bool FullyEnrolled { get; set; }
+        public Proxy Proxy { get; set; }
 
         public SessionData Session { get; set; }
 
@@ -130,7 +131,7 @@ namespace SteamAuth
             CookieContainer cookies = new CookieContainer();
             this.Session.AddCookies(cookies);
 
-            string response = SteamWeb.Request(url, "GET", "", cookies);
+            string response = SteamWeb.Request(url, "GET", "", cookies, Proxy.BuildProxy());
             return FetchConfirmationInternal(response);
         }
 
@@ -141,7 +142,7 @@ namespace SteamAuth
             CookieContainer cookies = new CookieContainer();
             this.Session.AddCookies(cookies);
 
-            string response = await SteamWeb.RequestAsync(url, "GET", null, cookies);
+            string response = await SteamWeb.RequestAsync(url, "GET", null, cookies, null, null, Proxy.BuildProxy());
             return FetchConfirmationInternal(response);
         }
 
@@ -232,7 +233,7 @@ namespace SteamAuth
             string response = null;
             try
             {
-                response = SteamWeb.Request(url, "POST", postData);
+                response = SteamWeb.Request(url, "POST", postData, null, Proxy.BuildProxy());
             }
             catch (WebException)
             {
@@ -273,9 +274,9 @@ namespace SteamAuth
             string response = null;
             try
             {
-                response = await SteamWeb.RequestAsync(url, "POST", postData);
+                response = await SteamWeb.RequestAsync(url, "POST", postData, null, null, null, Proxy.BuildProxy());
             }
-            catch (WebException)
+            catch (WebException ex)
             {
                 return false;
             }
@@ -311,7 +312,7 @@ namespace SteamAuth
             this.Session.AddCookies(cookies);
             string referer = GenerateConfirmationURL();
 
-            string response = SteamWeb.Request(url, "GET", "", cookies, null);
+            string response = SteamWeb.Request(url, "GET", "", cookies, Proxy.BuildProxy());
             if (String.IsNullOrEmpty(response)) return null;
 
             var confResponse = JsonConvert.DeserializeObject<ConfirmationDetailsResponse>(response);
@@ -331,7 +332,7 @@ namespace SteamAuth
             this.Session.AddCookies(cookies);
             string referer = GenerateConfirmationURL();
 
-            string response = SteamWeb.Request(url, "GET", "", cookies, null);
+            string response = SteamWeb.Request(url, "GET", "", cookies, Proxy.BuildProxy());
             if (response == null) return false;
 
             SendConfirmationResponse confResponse = JsonConvert.DeserializeObject<SendConfirmationResponse>(response);
@@ -352,7 +353,7 @@ namespace SteamAuth
             this.Session.AddCookies(cookies);
             string referer = GenerateConfirmationURL();
 
-            string response = SteamWeb.Request(url, "POST", query, cookies, null);
+            string response = SteamWeb.Request(url, "POST", query, cookies, Proxy.BuildProxy());
             if (response == null) return false;
 
             SendConfirmationResponse confResponse = JsonConvert.DeserializeObject<SendConfirmationResponse>(response);

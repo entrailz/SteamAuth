@@ -25,7 +25,7 @@ namespace SteamAuth
         /// <summary>
         /// After the initial link step, if successful, this will be the SteamGuard data for the account. PLEASE save this somewhere after generating it; it's vital data.
         /// </summary>
-        public SteamGuardAccount LinkedAccount { get; private set; }
+        public SteamGuardAccount LinkedAccount { get; set; }
 
         /// <summary>
         /// True if the authenticator has been fully finalized.
@@ -42,6 +42,7 @@ namespace SteamAuth
             this.DeviceID = GenerateDeviceID();
 
             this._cookies = new CookieContainer();
+            this.LinkedAccount = new SteamGuardAccount();
             session.AddCookies(_cookies);
         }
 
@@ -73,7 +74,7 @@ namespace SteamAuth
             postData.Add("device_identifier", this.DeviceID);
             postData.Add("sms_phone_id", "1");
 
-            string response = SteamWeb.MobileLoginRequest(APIEndpoints.STEAMAPI_BASE + "/ITwoFactorService/AddAuthenticator/v0001", "POST", postData);
+            string response = SteamWeb.MobileLoginRequest(APIEndpoints.STEAMAPI_BASE + "/ITwoFactorService/AddAuthenticator/v0001", "POST", postData, null, null, LinkedAccount.Proxy.BuildProxy());
             if (response == null) return LinkResult.GeneralFailure;
 
             var addAuthenticatorResponse = JsonConvert.DeserializeObject<AddAuthenticatorResponse>(response);
@@ -91,11 +92,13 @@ namespace SteamAuth
             {
                 return LinkResult.GeneralFailure;
             }
-
+            //The LinkedAccount variable is going to get overwritten, lets save it to a temp variable.
+            Proxy prevProxy = LinkedAccount.Proxy;
             this.LinkedAccount = addAuthenticatorResponse.Response;
             LinkedAccount.Session = this._session;
             LinkedAccount.DeviceID = this.DeviceID;
-
+            //Now that the LinkedAccount variable has been changed, lets set the proxy back.
+            LinkedAccount.Proxy = prevProxy;
             return LinkResult.AwaitingFinalization;
         }
 
@@ -119,7 +122,7 @@ namespace SteamAuth
                 postData.Set("authenticator_code", LinkedAccount.GenerateSteamGuardCode());
                 postData.Set("authenticator_time", TimeAligner.GetSteamTime().ToString());
 
-                string response = SteamWeb.MobileLoginRequest(APIEndpoints.STEAMAPI_BASE + "/ITwoFactorService/FinalizeAddAuthenticator/v0001", "POST", postData);
+                string response = SteamWeb.MobileLoginRequest(APIEndpoints.STEAMAPI_BASE + "/ITwoFactorService/FinalizeAddAuthenticator/v0001", "POST", postData, null, null, LinkedAccount.Proxy.BuildProxy());
                 if (response == null) return FinalizeResult.GeneralFailure;
 
                 var finalizeResponse = JsonConvert.DeserializeObject<FinalizeAuthenticatorResponse>(response);
@@ -169,7 +172,7 @@ namespace SteamAuth
             postData.Add("skipvoip", "1");
             postData.Add("sessionid", _session.SessionID);
 
-            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies);
+            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies, LinkedAccount.Proxy.BuildProxy());
             if (response == null) return false;
 
             var addPhoneNumberResponse = JsonConvert.DeserializeObject<AddPhoneResponse>(response);
@@ -190,7 +193,7 @@ namespace SteamAuth
             postData.Add("arg", PhoneNumber);
             postData.Add("sessionid", _session.SessionID);
 
-            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies);
+            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies, LinkedAccount.Proxy.BuildProxy());
             if (response == null) return false;
 
             var addPhoneNumberResponse = JsonConvert.DeserializeObject<AddPhoneResponse>(response);
@@ -203,7 +206,7 @@ namespace SteamAuth
             postData.Add("arg", "");
             postData.Add("sessionid", _session.SessionID);
 
-            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies);
+            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies, LinkedAccount.Proxy.BuildProxy());
             if (response == null) return false;
 
             var emailConfirmationResponse = JsonConvert.DeserializeObject<AddPhoneResponse>(response);
@@ -216,7 +219,7 @@ namespace SteamAuth
             postData.Add("arg", "null");
             postData.Add("sessionid", _session.SessionID);
 
-            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies);
+            string response = SteamWeb.Request(APIEndpoints.COMMUNITY_BASE + "/steamguard/phoneajax", "POST", postData, _cookies, LinkedAccount.Proxy.BuildProxy());
             if (response == null) return false;
 
             var hasPhoneResponse = JsonConvert.DeserializeObject<HasPhoneResponse>(response);

@@ -30,6 +30,7 @@ namespace SteamAuth
 
         public SessionData Session = null;
         public bool LoggedIn = false;
+        public Proxy Proxy = null;
 
         private CookieContainer _cookies = new CookieContainer();
 
@@ -37,6 +38,13 @@ namespace SteamAuth
         {
             this.Username = username;
             this.Password = password;
+        }
+
+        public UserLogin(string username, string password, Proxy proxy)
+        {
+            this.Username = username;
+            this.Password = password;
+            this.Proxy = proxy;
         }
 
         public LoginResult DoLogin()
@@ -55,12 +63,12 @@ namespace SteamAuth
                 NameValueCollection headers = new NameValueCollection();
                 headers.Add("X-Requested-With", "com.valvesoftware.android.steam.community");
 
-                SteamWeb.MobileLoginRequest("https://steamcommunity.com/login?oauth_client_id=DE45CD61&oauth_scope=read_profile%20write_profile%20read_client%20write_client", "GET", null, cookies, headers);
+                SteamWeb.MobileLoginRequest("https://steamcommunity.com/login?oauth_client_id=DE45CD61&oauth_scope=read_profile%20write_profile%20read_client%20write_client", "GET", null, cookies, headers, Proxy.BuildProxy());
             }
 
             postData.Add("donotcache", (TimeAligner.GetSteamTime() * 1000).ToString());
             postData.Add("username", this.Username);
-            response = SteamWeb.MobileLoginRequest(APIEndpoints.COMMUNITY_BASE + "/login/getrsakey", "POST", postData, cookies);
+            response = SteamWeb.MobileLoginRequest(APIEndpoints.COMMUNITY_BASE + "/login/getrsakey", "POST", postData, cookies, null, Proxy.BuildProxy());
             if (response == null || response.Contains("<BODY>\nAn error occurred while processing your request.")) return LoginResult.GeneralFailure;
 
             var rsaResponse = JsonConvert.DeserializeObject<RSAResponse>(response);
@@ -104,7 +112,7 @@ namespace SteamAuth
             postData.Add("oauth_client_id", "DE45CD61");
             postData.Add("oauth_scope", "read_profile write_profile read_client write_client");
 
-            response = SteamWeb.MobileLoginRequest(APIEndpoints.COMMUNITY_BASE + "/login/dologin", "POST", postData, cookies);
+            response = SteamWeb.MobileLoginRequest(APIEndpoints.COMMUNITY_BASE + "/login/dologin", "POST", postData, cookies, null, Proxy.BuildProxy());
             if (response == null) return LoginResult.GeneralFailure;
 
             var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(response);
