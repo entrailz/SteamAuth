@@ -451,6 +451,14 @@ namespace SteamAuth
         {
         }
 
+        public class ProxyConnectionException : Exception
+        {
+            public ProxyConnectionException(string message) : base(message)
+            {
+
+            }
+        }
+
         private class RefreshSessionDataResponse
         {
             [JsonProperty("response")]

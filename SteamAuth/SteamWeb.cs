@@ -203,14 +203,11 @@ namespace SteamAuth
             switch (e.Message.ToString())
             {
                 case "Unable to connect to the remote server":
-                    MessageBox((IntPtr)0, "Proxy error - please check proxy, please ignore the next error.", "Proxy Error", 0);
-                    break;
+                    throw new SteamGuardAccount.ProxyConnectionException("Proxy error - please check proxy.");
                 case "The remote server returned an error: (407) Proxy Authentication Required.":
-                    MessageBox((IntPtr)0, "Proxy error - Authentication error - please ensure the proxy is correct.", "Proxy Error", 0);
-                    break;
+                    throw new SteamGuardAccount.ProxyConnectionException("Proxy error - Authentication error.");
                 default:
-                    MessageBox((IntPtr)0, "Proxy error - Generic proxy error.", "Proxy Error", 0);
-                    break;
+                    throw new SteamGuardAccount.ProxyConnectionException("Proxy error - Generic proxy error.");
             }
             if (response == null) return;
 
