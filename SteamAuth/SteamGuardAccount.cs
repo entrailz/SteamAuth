@@ -54,6 +54,8 @@ namespace SteamAuth
 
         public SessionData Session { get; set; }
 
+        public DateTime lastError = default(DateTime);
+
         private static byte[] steamGuardCodeTranslations = new byte[] { 50, 51, 52, 53, 54, 55, 56, 57, 66, 67, 68, 70, 71, 72, 74, 75, 77, 78, 80, 81, 82, 84, 86, 87, 88, 89 };
 
         public bool DeactivateAuthenticator(int scheme = 2)
@@ -276,9 +278,9 @@ namespace SteamAuth
             {
                 response = await SteamWeb.RequestAsync(url, "POST", postData, null, null, null, Proxy.BuildProxy());
             }
-            catch (WebException ex)
+            catch (Exception ex)
             {
-                return false;
+                throw ex;
             }
 
             if (response == null) return false;
@@ -363,6 +365,7 @@ namespace SteamAuth
         public string GenerateConfirmationURL(string tag = "conf")
         {
             string endpoint = APIEndpoints.COMMUNITY_BASE + "/mobileconf/conf?";
+           //string endpoint = "https://steamproxy.co/mobileconf/conf?"; //TODO: Use this instead of normal endpoint?
             string queryString = GenerateConfirmationQueryParams(tag);
             return endpoint + queryString;
         }

@@ -188,7 +188,6 @@ namespace SteamAuth
             }
             catch (WebException e)
             {
-
                 HandleFailedWebRequestResponse(e.Response as HttpWebResponse, url, e);
                 return null;
             }
@@ -199,32 +198,36 @@ namespace SteamAuth
         /// </summary>
         private static void HandleFailedWebRequestResponse(HttpWebResponse response, string requestURL, WebException e = null)
         {
-            Console.WriteLine(e.Message.ToString());
+            if (response == null && e == null) return;
             switch (e.Message.ToString())
             {
                 case "Unable to connect to the remote server":
                     throw new SteamGuardAccount.ProxyConnectionException("Proxy error - please check proxy.");
                 case "The remote server returned an error: (407) Proxy Authentication Required.":
                     throw new SteamGuardAccount.ProxyConnectionException("Proxy error - Authentication error.");
-                default:
-                    throw new SteamGuardAccount.ProxyConnectionException("Proxy error - Generic proxy error.");
+                case "Cannot handle redirect from HTTP/HTTPS protocols to other dissimilar ones.": //Session is probably expired... lets throw token exception.
+                    throw new SteamGuardAccount.WGTokenExpiredException();
+                case "The remote server returned an error: (401) Unauthorized.":
+                    throw new SteamGuardAccount.WGTokenInvalidException();
+                default: //Unhandled, but show the full error to the end user. 
+                    throw new SteamGuardAccount.ProxyConnectionException(e.Message);
             }
-            if (response == null) return;
+            //if (response == null) return;
 
-            //Redirecting -- likely to a steammobile:// URI
-            if (response.StatusCode == HttpStatusCode.Found)
-            {
-                var location = response.Headers.Get("Location");
-                if (!string.IsNullOrEmpty(location))
-                {
-                    //Our OAuth token has expired. This is given both when we must refresh our session, or the entire OAuth Token cannot be refreshed anymore.
-                    //Thus, we should only throw this exception when we're attempting to refresh our session.
-                    if (location == "steammobile://lostauth" && requestURL == APIEndpoints.MOBILEAUTH_GETWGTOKEN)
-                    {
-                        throw new SteamGuardAccount.WGTokenExpiredException();
-                    }
-                }
-            }
+            ////Redirecting -- likely to a steammobile:// URI
+            //if (response.StatusCode == HttpStatusCode.Found)
+            //{
+            //    var location = response.Headers.Get("Location");
+            //    if (!string.IsNullOrEmpty(location))
+            //    {
+            //        //Our OAuth token has expired. This is given both when we must refresh our session, or the entire OAuth Token cannot be refreshed anymore.
+            //        //Thus, we should only throw this exception when we're attempting to refresh our session.
+            //        if (location == "steammobile://lostauth" && requestURL == APIEndpoints.MOBILEAUTH_GETWGTOKEN)
+            //        {
+            //            throw new SteamGuardAccount.WGTokenExpiredException();
+            //        }
+            //    }
+            //}
         }
     }
 }

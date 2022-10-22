@@ -18,6 +18,7 @@ namespace SteamAuth
 
         public void AddCookies(CookieContainer cookies)
         {
+            //TODO: Can use steamproxy.co here? Avoiding error 429.
             cookies.Add(new Cookie("mobileClientVersion", "0 (2.1.3)", "/", ".steamcommunity.com"));
             cookies.Add(new Cookie("mobileClient", "android", "/", ".steamcommunity.com"));
 
